@@ -1,6 +1,6 @@
 import Map from './components/Map';
 import Logo from './components/Logo';
-import React from 'react';
+import React, { useState } from 'react';
 import InputFieldWithButton from "./components/InputFieldWithButton";
 import UserLogo from "./components/UserLogo";
 import mapLayers from './utils/mapLayers';
@@ -151,23 +151,23 @@ function App() {
       />
     </div>
   );
-
-  const styles = {
-    wrapper: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: '100vw',
-      height: '100vh',
-      flexDirection: 'column',
-    },
-    contentContainer: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: '95%', // Adjust width based on your preference
-    },
-  };
 }
+
+const styles = {
+  wrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100vw',
+    height: '100vh',
+    flexDirection: 'column',
+  },
+  contentContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '95%', // Adjust width based on your preference
+  },
+};
 
 export default App;
