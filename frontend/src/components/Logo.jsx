@@ -5,7 +5,7 @@ const Logo = () => {
         <div style={styles.logoContainer}>
             <div>
                 <img src="/SmartBikeLogo.png" alt="Logo" style={styles.logo}/>
-                <h5>SafetyNavigator</h5>
+                <h5>Safety Navigator</h5>
             </div>
         </div>
     );
