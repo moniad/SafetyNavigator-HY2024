@@ -49,7 +49,8 @@ const Map = ({
     return < div style = {
         {
             width: "100%",
-            height: "500px"
+            height: "calc(100% - 72px)",
+            boxSizing: "border-box"
         }
     }
     ref = {
