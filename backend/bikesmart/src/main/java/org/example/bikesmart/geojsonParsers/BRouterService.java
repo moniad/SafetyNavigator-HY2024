@@ -44,7 +44,7 @@ public class BRouterService {
             String requestBody = objectMapper.writeValueAsString(Map.of("trace", trace));
 
             // Prepare the API URL and key
-            String apiUrl = "https://router.hereapi.com/v8/import?apikey=B1i2fhMekYEaFkkPoVJjErKYaquAglsTyib4of2WPfE&return=polyline,summary&transportMode=bicycle";
+            String apiUrl = "https://router.hereapi.com/v8/import?apikey=B1i2fhMekYEaFkkPoVJjErKYaquAglsTyib4of2WPfE&return=polyline,summary,actions,instructions&transportMode=bicycle";
 
             // Create the HTTP request
             HttpRequest request = HttpRequest.newBuilder()
