@@ -10,7 +10,8 @@ const Map = ({
     apikey,
     geoJson,
     mapLayer,
-    setMapLayer
+    setMapLayer,
+    setItin
 }) => {
     const mapRef = useRef(null);
     const map = useRef(null);
@@ -145,6 +146,22 @@ const Map = ({
     ref = {
         mapRef
     }
+    onClick={(evt) => {
+        console.log(evt);
+        const x = evt.clientX;
+        const y = evt.clientY;
+        const {lat, lng} = map.current.screenToGeo(x, y);
+        console.log(map.current.screenToGeo(x, y));
+        setItin((prev) => {
+            if (prev.from.length === 0) {
+                prev.from = [lat, lng];
+            } else {
+                prev.to = [lat, lng];
+                prev.makeRoute = true;
+            }
+            return {...prev};  
+        });
+    }}
     />;
 }
 

@@ -1,22 +1,31 @@
 import Map from './components/Map';
 import Logo from './components/Logo';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import InputFieldWithButton from "./components/InputFieldWithButton";
 import UserLogo from "./components/UserLogo";
 import mapLayers from './utils/mapLayers';
+import { ReactComponent as Icon1 } from './icons/1.svg';
+import { ReactComponent as Icon2 } from './icons/2.svg';
+import { ReactComponent as Icon3 } from './icons/3.svg';
+import { ReactComponent as Icon4 } from './icons/4.svg';
 
 const apikey = 'B1i2fhMekYEaFkkPoVJjErKYaquAglsTyib4of2WPfE'
 
-const tmpgeojson = {
-  type: "FeatureCollection",
-  features: [
+const tmpgeojson = JSON.parse(`{
+  "type": "FeatureCollection",
+  "features": [
     {
-      type: "Feature",
-      properties: {
-        creator: "BRouter-1.7.7",
-        name: "brouter_trekking_0",
-        cost: "4067",
-        messages: [
+      "type": "Feature",
+      "properties": {
+        "creator": "BRouter-1.7.7",
+        "name": "brouter_trekking_0",
+        "track-length": "1064",
+        "filtered ascend": "6",
+        "plain-ascend": "7",
+        "total-time": "209",
+        "total-energy": "20904",
+        "cost": "4067",
+        "messages": [
           ["Longitude", "Latitude", "Elevation", "Distance", "CostPerKm", "ElevCost", "TurnCost", "NodeCost", "InitialCost", "WayTags", "NodeTags", "Time", "Energy"],
           ["19936708", "50061084", "218", "42", "3050", "0", "8", "0", "0", "reversedirection=yes highway=pedestrian surface=sett bicycle=yes smoothness=excellent", "", "7", "710"],
           ["19936581", "50060941", "218", "18", "3050", "0", "11", "0", "0", "highway=pedestrian surface=paving_stones bicycle=yes smoothness=good", "", "9", "994"],
@@ -50,11 +59,11 @@ const tmpgeojson = {
           ["19935609", "50054839", "225", "26", "5050", "0", "44", "0", "0", "reversedirection=yes highway=footway", "", "208", "20835"],
           ["19935633", "50054841", "225", "2", "40000", "0", "0", "0", "0", "reversedirection=yes highway=steps", "", "209", "20904"]
         ],
-        times: [0, 1.077, 7.105, 9.944, 14.91, 17.175, 20.292, 23.615, 24.361, 30.131, 31.151, 31.445, 32.98, 34.73, 39.067, 41.226, 44.145, 44.92, 46.35, 47.166, 47.522, 47.88, 48.224, 48.455, 48.688, 49.276, 50.356, 56.558, 66.486, 66.888, 67.428, 67.972, 68.383, 83.601, 87.858, 100.357, 109.738, 112.105, 116.517, 121.365, 129.824, 132.501, 135.309, 138.115, 169.12, 172.09, 174.315, 175.482, 178.139, 180.18, 181.736, 182.998, 183.412, 184.274, 184.7, 185.144, 185.585, 186.022, 188.826, 189.732, 190.626, 195.721, 196.147, 199.045, 200.183, 202.393, 203.407, 205.496, 206.925, 208.318, 209.001]
+        "times": [0,1.077,7.105,9.944,14.91,17.175,20.292,23.615,24.361,30.131,31.151,31.445,32.98,34.73,39.067,41.226,44.145,44.92,46.35,47.166,47.522,47.88,48.224,48.455,48.688,49.276,50.356,56.558,66.486,66.888,67.428,67.972,68.383,83.601,87.858,100.357,109.738,112.105,116.517,121.365,129.824,132.501,135.309,138.115,169.12,172.09,174.315,175.482,178.139,180.18,181.736,182.998,183.412,184.274,184.7,185.144,185.585,186.022,188.826,189.732,190.626,195.721,196.147,199.045,200.183,202.393,203.407,205.496,206.925,208.318,209.001]
       },
-      geometry: {
-        type: "LineString",
-        coordinates: [
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
           [19.936683, 50.061458, 218.25],
           [19.936719, 50.061405, 218.5],
           [19.936708, 50.061084, 218.25],
@@ -131,10 +140,98 @@ const tmpgeojson = {
     }
   ]
 }
+`);
+
+const tmpgeojsonarray = [tmpgeojson, tmpgeojson, tmpgeojson, tmpgeojson];
+
+function PathDetails({ json, idx, setSelectedJsonIdx, isSelected = false }) {
+  const properties = json.features[0].properties;
+
+  let incline = 0;
+  let decline = 0;
+  let prevMessage = null;
+  properties.messages.slice(1).forEach((message) => {
+    if (prevMessage) {
+      const diff = message[2] - prevMessage[2];
+      if (isNaN(diff)) {
+        console.log('diff is NaN', message, prevMessage);
+      }
+      if (diff > 0) {
+        incline += diff;
+      } else {
+        decline -= diff;
+      }
+    }
+    prevMessage = message;
+  });
+
+  const data = [
+    [`${properties["track-length"]/1000} km`, <Icon1 />],
+    [`${properties["total-time"]} min`, <Icon2 />],
+    [`${decline} m`, <Icon3 />],
+    [`${incline} m`, <Icon4 />],
+  ];
+  const score = Math.floor(Math.random() * 100);
+  const scoreColor = score > 80 ? 'green' : score > 50 ? 'blue' : score > 20 ? 'orange' : 'red';
+  return (
+    <div style={{
+        ...styles.infoRow,
+        backgroundColor: isSelected ? 'lightblue' : 'transparent',
+      }}>
+      <div style={{ padding: "1rem 0" }}><strong>{json.features[0].properties.name}</strong></div>
+      <div style={styles.infoBar}>
+        {data.map(([value, icon], idx2) => (
+          <div style={{
+              ...styles.infoBox,
+              borderLeft: idx2 > 0 ? '1px solid black' : 'none',
+            }}>
+            {value}
+            {icon}
+          </div>
+        ))}
+      </div>
+      <div style={styles.safetyWrapper}><strong>Bezpieczeństwo:</strong><div style={{
+        ...styles.safety,
+        backgroundColor: scoreColor,
+      }}>{score}</div></div>
+      <div><strong>Opis trasy</strong></div>
+      <div style={{textAlign: 'right'}}>
+        <button style={styles.selectOptionButton} onClick={() => setSelectedJsonIdx(idx)}>Wybierz</button>
+      </div>
+    </div>
+  )
+}
+
+function SidePanel({ jsonArray, selectedJsonIdx, setSelectedJsonIdx }) {
+  return (
+    <div style={styles.sidePanel}>
+      <h1 style={{ marginBottom: "1rem" }}>Side Panel</h1>
+      {jsonArray.map((json, idx) => <PathDetails key={idx} json={json} isSelected={idx === selectedJsonIdx} idx={idx} setSelectedJsonIdx={setSelectedJsonIdx} />)}
+    </div>
+  );
+}
 
 function App() {
 
   const [mapLayer, setMapLayer] = useState(mapLayers.basic);
+  const [itin, setItin] = useState({
+    from: [],
+    to: [],
+    makeRoute: false
+  });
+  const [jsonArray, setJsonArray] = useState(tmpgeojsonarray);
+  const [selectedJsonIdx, setSelectedJsonIdx] = useState(0);
+
+  useEffect(() => {
+    if (itin.makeRoute) {
+      console.log(`Routing From: ${itin.from}, To: ${itin.to}`);
+      setItin({
+        from: [],
+        to: [],
+        makeRoute: false
+      });
+    }
+  }, [itin]);
 
   return (
     <div style={styles.wrapper}>
@@ -143,12 +240,17 @@ function App() {
         <InputFieldWithButton />
         <UserLogo />
       </div>
-      <Map
-        apikey={apikey}
-        geoJson={tmpgeojson}
-        mapLayer={mapLayer}
-        setMapLayer={setMapLayer}
-      />
+      <div style={styles.main}>
+        <SidePanel jsonArray={jsonArray} selectedJsonIdx={selectedJsonIdx} setSelectedJsonIdx={setSelectedJsonIdx} />
+        <Map
+          apikey={apikey}
+          geoJson={jsonArray[selectedJsonIdx]}
+          mapLayer={mapLayer}
+          setMapLayer={setMapLayer}
+          setItin={setItin}
+        />
+      </div>
+
     </div>
   );
 }
@@ -167,6 +269,62 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     width: '95%', // Adjust width based on your preference
+  },
+  main: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100vw', // Adjust width based on your preference
+    height: '80%',
+  },
+  sidePanel: {
+    width: '30%',
+    height: '100%',
+    overflowY: 'scroll',
+  },
+  infoRow: {
+    padding: "0.5rem 1rem",
+    borderBottom: '1px solid black',
+  },
+  infoBar: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  infoBox: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'column',
+    width: '100px',
+    whiteSpace: 'nowrap',
+  },
+  safetyWrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    padding: '1rem 0',
+  },
+  safety: {
+    backgroundColor: 'green',
+    width: '40px',
+    height: '40px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: '50%',
+    color: 'white',
+  },
+  selectOptionButton: {
+    padding: '0.5rem 1rem',
+    backgroundColor: 'transparent',
+    color: '#6770E5',
+    border: 'none',
+    cursor: 'pointer',
   },
 };
 
