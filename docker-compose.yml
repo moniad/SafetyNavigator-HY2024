@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  brouter:
+    image: brouter-compose-prod
+    container_name: brouter-compose-prod
+    build:
+      context: ./brouter-infra/brouter
+      dockerfile: Dockerfile
+    ports:
+      - "17777:17777"
+    volumes:
+      - "./brouter-infra/maps:/segments4"
+      - "./brouter-infra/profile:/profiles2"
+    restart: unless-stopped
