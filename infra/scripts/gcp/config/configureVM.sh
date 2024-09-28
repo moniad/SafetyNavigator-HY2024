@@ -42,5 +42,5 @@ node -v # should print `v20.17.0`
 # verifies the right npm version is in the environment
 npm -v # should print `10.8.2`
 
-EKHEEM run in the frontend-server catalog: npm init
+EKHEEM run in frontend-server/: npm init
 npm install express
