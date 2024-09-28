@@ -8,7 +8,7 @@ services:
       context: ./brouter-infra/brouter
       dockerfile: Dockerfile
     ports:
-      - "17777:17777"
+      - "8080:17777"
     volumes:
       - "./brouter-infra/maps:/segments4"
       - "./brouter-infra/profile:/profiles2"
