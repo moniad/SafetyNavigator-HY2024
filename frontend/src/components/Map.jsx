@@ -11,7 +11,8 @@ const Map = ({
     geoJson,
     mapLayer,
     setMapLayer,
-    setItin
+    setItin,
+    setMapCenter
 }) => {
     const mapRef = useRef(null);
     const map = useRef(null);
@@ -40,6 +41,10 @@ const Map = ({
                     },
                 }
             );
+
+            newMap.addEventListener("mapviewchangeend", (evt) => {
+                setMapCenter(newMap.getCenter());
+            });
 
             // Add panning and zooming behavior to the map
             const behavior = new H.mapevents.Behavior(
@@ -139,7 +144,7 @@ const Map = ({
     return < div style = {
         {
             width: "100%",
-            height: "calc(100% - 72px)",
+            height: "100%",
             boxSizing: "border-box"
         }
     }
@@ -147,11 +152,9 @@ const Map = ({
         mapRef
     }
     onClick={(evt) => {
-        console.log(evt);
         const x = evt.clientX;
         const y = evt.clientY;
         const {lat, lng} = map.current.screenToGeo(x, y);
-        console.log(map.current.screenToGeo(x, y));
         setItin((prev) => {
             if (prev.from.length === 0) {
                 prev.from = [lat, lng];

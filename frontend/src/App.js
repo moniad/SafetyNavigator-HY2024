@@ -4,10 +4,7 @@ import React, { useEffect, useState } from 'react';
 import InputFieldWithButton from "./components/InputFieldWithButton";
 import UserLogo from "./components/UserLogo";
 import mapLayers from './utils/mapLayers';
-import { ReactComponent as Icon1 } from './icons/1.svg';
-import { ReactComponent as Icon2 } from './icons/2.svg';
-import { ReactComponent as Icon3 } from './icons/3.svg';
-import { ReactComponent as Icon4 } from './icons/4.svg';
+import SidePanel from './components/SidePanel';
 
 const apikey = 'B1i2fhMekYEaFkkPoVJjErKYaquAglsTyib4of2WPfE'
 
@@ -24,6 +21,7 @@ const tmpgeojson = JSON.parse(`{
         "plain-ascend": "7",
         "total-time": "209",
         "total-energy": "20904",
+        "safety-score": "86",
         "cost": "4067",
         "messages": [
           ["Longitude", "Latitude", "Elevation", "Distance", "CostPerKm", "ElevCost", "TurnCost", "NodeCost", "InitialCost", "WayTags", "NodeTags", "Time", "Energy"],
@@ -144,73 +142,6 @@ const tmpgeojson = JSON.parse(`{
 
 const tmpgeojsonarray = [tmpgeojson, tmpgeojson, tmpgeojson, tmpgeojson];
 
-function PathDetails({ json, idx, setSelectedJsonIdx, isSelected = false }) {
-  const properties = json.features[0].properties;
-
-  let incline = 0;
-  let decline = 0;
-  let prevMessage = null;
-  properties.messages.slice(1).forEach((message) => {
-    if (prevMessage) {
-      const diff = message[2] - prevMessage[2];
-      if (isNaN(diff)) {
-        console.log('diff is NaN', message, prevMessage);
-      }
-      if (diff > 0) {
-        incline += diff;
-      } else {
-        decline -= diff;
-      }
-    }
-    prevMessage = message;
-  });
-
-  const data = [
-    [`${properties["track-length"]/1000} km`, <Icon1 />],
-    [`${properties["total-time"]} min`, <Icon2 />],
-    [`${decline} m`, <Icon3 />],
-    [`${incline} m`, <Icon4 />],
-  ];
-  const score = Math.floor(Math.random() * 100);
-  const scoreColor = score > 80 ? 'green' : score > 50 ? 'blue' : score > 20 ? 'orange' : 'red';
-  return (
-    <div style={{
-        ...styles.infoRow,
-        backgroundColor: isSelected ? 'lightblue' : 'transparent',
-      }}>
-      <div style={{ padding: "1rem 0" }}><strong>{json.features[0].properties.name}</strong></div>
-      <div style={styles.infoBar}>
-        {data.map(([value, icon], idx2) => (
-          <div style={{
-              ...styles.infoBox,
-              borderLeft: idx2 > 0 ? '1px solid black' : 'none',
-            }}>
-            {value}
-            {icon}
-          </div>
-        ))}
-      </div>
-      <div style={styles.safetyWrapper}><strong>Bezpieczeństwo:</strong><div style={{
-        ...styles.safety,
-        backgroundColor: scoreColor,
-      }}>{score}</div></div>
-      <div><strong>Opis trasy</strong></div>
-      <div style={{textAlign: 'right'}}>
-        <button style={styles.selectOptionButton} onClick={() => setSelectedJsonIdx(idx)}>Wybierz</button>
-      </div>
-    </div>
-  )
-}
-
-function SidePanel({ jsonArray, selectedJsonIdx, setSelectedJsonIdx }) {
-  return (
-    <div style={styles.sidePanel}>
-      <h1 style={{ marginBottom: "1rem" }}>Side Panel</h1>
-      {jsonArray.map((json, idx) => <PathDetails key={idx} json={json} isSelected={idx === selectedJsonIdx} idx={idx} setSelectedJsonIdx={setSelectedJsonIdx} />)}
-    </div>
-  );
-}
-
 function App() {
 
   const [mapLayer, setMapLayer] = useState(mapLayers.basic);
@@ -221,6 +152,7 @@ function App() {
   });
   const [jsonArray, setJsonArray] = useState(tmpgeojsonarray);
   const [selectedJsonIdx, setSelectedJsonIdx] = useState(0);
+  const [mapCenter, setMapCenter] = useState([]);
 
   useEffect(() => {
     if (itin.makeRoute) {
@@ -237,7 +169,11 @@ function App() {
     <div style={styles.wrapper}>
       <div style={styles.contentContainer}>
         <Logo />
-        <InputFieldWithButton />
+        <InputFieldWithButton
+          setJsonArray={setJsonArray}
+          mapCenter={mapCenter}
+          apikey={apikey}
+        />
         <UserLogo />
       </div>
       <div style={styles.main}>
@@ -248,6 +184,7 @@ function App() {
           mapLayer={mapLayer}
           setMapLayer={setMapLayer}
           setItin={setItin}
+          setMapCenter={setMapCenter}
         />
       </div>
 

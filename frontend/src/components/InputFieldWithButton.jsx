@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const InputFieldWithButton = () => {
+const InputFieldWithButton = ({ setJsonArray, mapCenter, apikey }) => {
     const [inputValue, setInputValue] = useState('');
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const [lastHashtag, setLastHashtag] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [initialDropdownVisible, setInitialDropdownVisible] = useState(true); // For showing the initial dropdown
+    const [promptData, setPromptData] = useState([]);
 
     // Function to detect the last hashtag and trigger API call
     const detectLastHashtag = (text) => {
@@ -18,15 +19,14 @@ const InputFieldWithButton = () => {
     };
 
     // Function to simulate API call for the last hashtag word
-    const callApiForHashtag = async (hashtag) => {
-        console.log(`Calling API for hashtag: ${hashtag}`);
-        // Simulated API response
-        const data = [
-            `Suggestion for #${hashtag} 1`,
-            `Suggestion for #${hashtag} 2`,
-            `Suggestion for #${hashtag} 3`,
-        ];
-        setSuggestions(data); // Set the suggestions to be displayed in the dropdown
+    const callApiForHashtag = (hashtag) => {
+        fetch(
+            `https://autosuggest.search.hereapi.com/v1/autosuggest?at=${mapCenter.lat},${mapCenter.lng}&lang=pl&q=${hashtag}&apiKey=${apikey}`
+        )
+            .then((response) => response.json())
+            .then((data) => {
+                setSuggestions(data.items.map((item) => item));
+            });
     };
 
     // Effect hook to call the API for the last detected hashtag
@@ -61,7 +61,36 @@ const InputFieldWithButton = () => {
         setDropdownVisible(false); // Hide dropdown on clear
         setSuggestions([]); // Clear suggestions
         setInitialDropdownVisible(true); // Reset initial dropdown visibility on clear
+        setPromptData([]); // Clear prompt data
     };
+
+    const handleSend = () => {
+        const url = "http://localhost:8080/swagger-ui/index.html#/ai-controller/chatWithAiAsSpeditorWithTacho";
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: inputValue,
+                locations: promptData,
+            }),
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                setJsonArray(data);
+                handleClearClick();
+            });
+    }
+
+    const promptPropositions = [
+        "Wyznacz najbardziej komfortową i bezpieczną trasę do <b>pkt na mapie</b>, preferując drogi o <b>małym ruchu samochodowym</b>, <b>małym hałasie</b>, <b>wśród zieleni</b>.",
+        "Wyznacz trasę do <b>50 km</b> dla <b>rodziny z dziećmi</b> w odległości do <b>2 godz. drogi samochodem</b> z miejscem na <b>piknik</b>, <b>atrakcjami dla dzieci</b> i <b>miejscem parkingu</b>.",
+        "Wyznacz trasę w formie pętli o długości <b>80-100 km</b> dla <b>roweru szosowego</b> na <b>północy Krakowa</b> przez <b>pkt A</b> oraz <b>pkt B</b>.",
+        "Wyznacz trasę do <b>30 km</b> dla <b>roweru górskiego</b> przez <b>Gorce</b>, przewyższenie <b>poniżej 2000 m</b>, <b>drogami szutrowymi</b>, <b>leśnymi</b>, jazdy <b>ścieżkami typu single track</b>, nachylenie <b>poniżej 10%</b>.",
+        "Zaproponuj trasę na <b>4-dniową</b> wyprawę rowerową po <b>Małopolsce</b> z dziennym limitem <b>70 km</b>, uwzględniając <b>atrakcje krajoznawcze</b>, preferuj trasy <b>ścieżkami rowerowymi</b>, <b>szutrowymi</b>, <b>lasem</b>, <b>wzdłuż rzek</b>. Zaplanuj nocleg na <b>polach namiotowych</b> z dobrymi opiniami.",
+        "Wyznacz trasę do <b>100 km</b> z <b>Oświęcimia</b>, fragmentem <b>Wiślanej Trasy Rowerowej</b>, uwzględnij powrót <b>pociągiem</b> i drogę na stację, wyświetl godziny odjazdu i koszt biletu z rowerem w weekend.",
+    ]
 
     return (
         <div style={styles.container}>
@@ -80,31 +109,27 @@ const InputFieldWithButton = () => {
                 🎤
             </button>
             <div style={styles.separator}></div>
-            <button style={styles.goButton}>
+            <button style={styles.goButton} onClick={handleSend}>
                 GO
             </button>
 
             {/* Show initial dropdown if no hashtag detected and suggestions are empty */}
             {isDropdownVisible && initialDropdownVisible && suggestions.length === 0 && (
                 <div style={styles.dropdown}>
-                    <div style={styles.dropdownItem}>
-                        Wyznacz najbardziej komfortową i bezpieczną trasę do <b>pkt na mapie</b>, preferując drogi o <b>małym ruchu samochodowym</b>, <b>małym hałasie</b>, <b>wśród zieleni</b>.
-                    </div>
-                    <div style={styles.dropdownItem}>
-                        Wyznacz trasę do <b>50 km</b> dla <b>rodziny z dziećmi</b> w odległości do <b>2 godz. drogi samochodem</b> z miejscem na <b>piknik</b>, <b>atrakcjami dla dzieci</b> i <b>miejscem parkingu</b>.
-                    </div>
-                    <div style={styles.dropdownItem}>
-                        Wyznacz trasę w formie pętli o długości <b>80-100 km</b> dla <b>roweru szosowego</b> na <b>północy Krakowa</b> przez <b>pkt A</b> oraz <b>pkt B</b>.
-                    </div>
-                    <div style={styles.dropdownItem}>
-                        Wyznacz trasę do <b>30 km</b> dla <b>roweru górskiego</b> przez <b>Gorce</b>, przewyższenie <b>poniżej 2000 m</b>, <b>drogami szutrowymi</b>, <b>leśnymi</b>, jazdy <b>ścieżkami typu single track</b>, nachylenie <b>poniżej 10%</b>.
-                    </div>
-                    <div style={styles.dropdownItem}>
-                        Zaproponuj trasę na <b>4-dniową</b> wyprawę rowerową po <b>Małopolsce</b> z dziennym limitem <b>70 km</b>, uwzględniając <b>atrakcje krajoznawcze</b>, preferuj trasy <b>ścieżkami rowerowymi</b>, <b>szutrowymi</b>, <b>lasem</b>, <b>wzdłuż rzek</b>. Zaplanuj nocleg na <b>polach namiotowych</b> z dobrymi opiniami.
-                    </div>
-                    <div style={styles.dropdownItem}>
-                        Wyznacz trasę do <b>100 km</b> z <b>Oświęcimia</b>, fragmentem <b>Wiślanej Trasy Rowerowej</b>, uwzględnij powrót <b>pociągiem</b> i drogę na stację, wyświetl godziny odjazdu i koszt biletu z rowerem w weekend.
-                    </div>
+                    {promptPropositions.map((prompt, index) => (
+                        <div
+                            key={index}
+                            style={styles.dropdownItem}
+                            dangerouslySetInnerHTML={{ __html: prompt }}
+                            onClick={() => {
+                                setInputValue(prompt.replace(/<b>/g, '').replace(/<\/b>/g, ''));
+                                setDropdownVisible(false);
+                                setSuggestions([]);
+                                setInitialDropdownVisible(true);
+                                setPromptData([]); // Clear prompt data
+                            }}
+                        ></div>
+                    ))}
                 </div>
             )}
 
@@ -112,8 +137,18 @@ const InputFieldWithButton = () => {
             {isDropdownVisible && suggestions.length > 0 && (
                 <div style={styles.dropdown}>
                     {suggestions.map((suggestion, index) => (
-                        <div key={index} style={styles.dropdownItem}>
-                            {suggestion}
+                        <div
+                            key={index}
+                            style={styles.dropdownItem}
+                            onClick={() => {
+                                setInputValue(inputValue.replace(`#${lastHashtag}`, suggestion.title));
+                                setDropdownVisible(false);
+                                setSuggestions([]);
+                                setInitialDropdownVisible(true);
+                                setPromptData((pre) => [...pre, suggestion.position]);
+                            }}
+                        >
+                            {suggestion.title}
                         </div>
                     ))}
                 </div>
