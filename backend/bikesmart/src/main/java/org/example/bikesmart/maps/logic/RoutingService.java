@@ -49,7 +49,7 @@ public class RoutingService {
 
         // Budowanie URI
         UriComponents uriComponents = UriComponentsBuilder
-                .fromHttpUrl("http://localhost:17777/brouter")
+                .fromHttpUrl("https://smartbike.website/brouter")
                 .queryParam("lonlats", lonlats)
                 .queryParam("profile", profile != null ? profile : "safe")
                 .queryParam("alternativeidx", alternativeIdx)

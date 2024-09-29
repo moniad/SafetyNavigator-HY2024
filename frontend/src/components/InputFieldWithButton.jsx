@@ -65,7 +65,8 @@ const InputFieldWithButton = ({ setJsonArray, mapCenter, apikey }) => {
     };
 
     const handleSend = () => {
-        const url = "http://localhost:8080/swagger-ui/index.html#/ai-controller/chatWithAiAsSpeditorWithTacho";
+        const url = "http://localhost:8081/ai";
+        // no cors
         fetch(url, {
             method: 'POST',
             headers: {
@@ -78,7 +79,8 @@ const InputFieldWithButton = ({ setJsonArray, mapCenter, apikey }) => {
         })
             .then((response) => response.json())
             .then((data) => {
-                setJsonArray(data);
+                console.log(data);
+                setJsonArray([data.routingResponse]);
                 handleClearClick();
             });
     }
