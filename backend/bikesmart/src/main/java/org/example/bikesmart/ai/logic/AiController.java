@@ -14,8 +14,8 @@ public class AiController {
     @PostMapping("/ai")
     @Operation(
             summary = "Chat and comunicate with AI to create safe bike route")
-    private String chatWithAiAsSpeditorWithTacho(@RequestBody String message) {
-        return aiService.chatWithAi(message).getResult().getOutput().getContent();
+    private String chatWithAiAsSpeditorWithTacho(@RequestBody RequestFromFrontend request) {
+        return aiService.chatWithAi(request.getMessage()).getResult().getOutput().getContent();
     }
 }
 

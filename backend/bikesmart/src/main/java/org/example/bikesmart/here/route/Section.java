@@ -4,8 +4,10 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class Section {
+public class
+Section {
     private String id;
+    private Type type;
     private Departure departure;
     private Arrival arrival;
     private Summary summary;
@@ -15,5 +17,6 @@ public class Section {
     private List<Surface> surface;
     private Elevation elevation;
     private BikeFacilities bikeFacilities;
+    private List<Span> spans;
 }
 

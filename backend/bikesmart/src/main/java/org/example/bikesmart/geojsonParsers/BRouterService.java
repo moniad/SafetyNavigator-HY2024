@@ -1,9 +1,18 @@
 package org.example.bikesmart.geojsonParsers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.bikesmart.here.route.RoutesResponse;
+import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class BRouterService {
@@ -11,16 +20,56 @@ public class BRouterService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public GeoJson getData() {
-        String url = "http://localhost:17777/brouter?lonlats=19.94098,50.06465|19.94428,50.04990&profile=trekking&alternativeidx=0&format=geojson"; // Zastąp rzeczywistym URL
+        String BROUTER_URL = "https://smartbike.website/brouter?lonlats=19.94098,50.06465|19.94428,50.04990&profile=trekking&alternativeidx=0&format=geojson"; // Zastąp rzeczywistym URL
 
         try {
             // Wykonanie żądania GET
-            String jsonData = restTemplate.getForObject(url, String.class);
+            String jsonData = restTemplate.getForObject(BROUTER_URL, String.class);
 
             // Parsowanie danych JSON
-            ObjectMapper objectMapper = new ObjectMapper();
             GeoJson geoJson = objectMapper.readValue(jsonData, GeoJson.class);
+            List<Pair<Double, Double>> xyList = geoJson.getFeatures().stream()
+                    .flatMap(feature -> feature.getGeometry().getCoordinates().stream())
+                    .map(coordinateList -> new Pair<>(coordinateList.get(0), coordinateList.get(1)))
+                    .toList();
+
+            //call HERE
+            // Convert xyList to the format required by the API
+            List<Map<String, Double>> trace = xyList.stream()
+                    .map(pair -> Map.of("lat", pair.getValue1(), "lng", pair.getValue0()))
+                    .toList();
+
+            // Create the JSON body
+            String requestBody = objectMapper.writeValueAsString(Map.of("trace", trace));
+
+            // Prepare the API URL and key
+            String apiUrl = "https://router.hereapi.com/v8/import?apikey=B1i2fhMekYEaFkkPoVJjErKYaquAglsTyib4of2WPfE&return=polyline,summary,actions,instructions,elevation,passthrough,truckRoadTypes,incidents&transportMode=bicycle&spans=maxSpeed,truckAttributes,carAttributes,segmentId,walkAttributes,streetAttributes,carAttributes,functionalClass,notices,truckRoadTypes,incidents,dynamicSpeedInfo,segmentRef";
+
+            // Create the HTTP request
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            // Create the HttpClient
+            HttpClient client = HttpClient.newHttpClient();
+
+            // Send the request and get the response
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            RoutesResponse routesResponse = objectMapper.readValue(response.body(), RoutesResponse.class);
+
+            // Print the response
+            System.out.println("Request: " + requestBody);
+            System.out.println("Response status code: " + response.statusCode());
+            System.out.println("Response body: " + response.body());
+
 
             // Wyciąganie prostych danych
             for (Feature feature : geoJson.getFeatures()) {
@@ -31,7 +80,7 @@ public class BRouterService {
                 System.out.println("Całkowity czas: " + properties.getTotalTime());
                 // Dalsze przetwarzanie...
             }
-           return geoJson;
+            return geoJson;
         } catch (Exception e) {
             e.printStackTrace();
         }
