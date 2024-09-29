@@ -37,7 +37,7 @@ public class BRouterService {
             //call HERE
             // Convert xyList to the format required by the API
             List<Map<String, Double>> trace = xyList.stream()
-                    .map(pair -> Map.of("lat", pair.getValue0(), "lng", pair.getValue1()))
+                    .map(pair -> Map.of("lat", pair.getValue1(), "lng", pair.getValue0()))
                     .toList();
 
             // Create the JSON body
