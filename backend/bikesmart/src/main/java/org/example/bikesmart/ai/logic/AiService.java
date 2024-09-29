@@ -80,31 +80,44 @@ public class AiService {
                     BrouterTypeClass.SAFE.getName(),
                     1
             );
-            // Process the messages to extract WayTags and generate safety scores
+            // Process each feature
             List<Feature> updatedFeatures = geoJson.getFeatures()
                     .stream()
                     .map(feature -> {
                         Properties properties = feature.getProperties();
                         List<List<String>> messages = properties.getMessages();
 
-                        // Skip the header row
+                        // Separate the header row and data rows
+                        List<String> headerRow = messages.get(0);
                         List<List<String>> dataRows = messages.subList(1, messages.size());
 
-                        // Extract WayTags from each row
-                        List<String> wayTagsList = dataRows.stream()
-                                .map(row -> row.get(9)) // Assuming WayTags is at index 9
-                                .collect(Collectors.toList());
+                        // Add "SafetyScore" to the header row
+                        headerRow.add("SafetyScore");
 
-                        // Generate safety scores for each WayTag
-                        List<Score> safetyScores = wayTagsList.stream()
-                                .map(wayTags -> generateSafetyScore(wayTags))
-                                .collect(Collectors.toList());
+                        // Process each data row
+                        for (List<String> row : dataRows) {
+                            String wayTags = row.get(9); // WayTags is at index 9
+                            Score safetyScore = generateSafetyScore(wayTags);
 
-                        // You can aggregate the safety scores or assign them back to properties
-                        // For simplicity, let's assume we take the lowest safety score as the overall score
-                        Score overallScore = safetyScores.stream().min(Comparator.naturalOrder()).orElse(Score.MEDIUM);
+                            // Append the safety score to the row
+                            row.add(safetyScore.getName());
+                        }
 
-                        // Set the safety score in properties
+                        // Update the messages in properties
+                        properties.setMessages(Stream.concat(
+                                Stream.of(headerRow),
+                                dataRows.stream()
+                        ).collect(Collectors.toList()));
+
+                        // Optionally, calculate the overall safety score for the feature
+                        // For example, take the lowest safety score among all segments
+                        Score overallScore = dataRows.stream()
+                                .map(row -> row.get(row.size() - 1)) // Get the safety score from the row
+                                .map(this::mapAiResponseToScore)
+                                .min(Comparator.naturalOrder())
+                                .orElse(Score.MEDIUM);
+
+                        // Set the overall safety score in properties
                         properties.setSafety(overallScore.getName());
 
                         // Update the feature with the new properties
