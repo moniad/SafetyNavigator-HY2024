@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.bikesmart.ai.model.LanguageAiJson;
+import org.example.bikesmart.ai.model.RouteBrouteAiModel;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -43,6 +44,7 @@ public class AiService {
             """;
     public ChatResponse chatWithAi(String userInput) {
         LanguageAiJson.Response response = giveMeLanguage(userInput);
+
         log.info("Detected language: {}", response.language());
         String customInstruction = "ANSWER IN " + response.language();
 
@@ -53,13 +55,21 @@ public class AiService {
 
         Prompt prompt = new Prompt(List.of(systemMessage, userMessage), OpenAiChatOptions.builder()
                 .withN(1)
-                .withFunctions(Set.of("geocodeSearch", "reverseGeosearch"))
+                .withFunctions(Set.of("geocodeSearch", "reverseGeosearch","getRouteFromApi"))
                 .build());
         return chatModel.call(prompt);
     }
 
 
-
+//    public LanguageAiJson.Response giveMeRequirementsOfRoute(String message) {
+//        final String promptText = "Routing requirements based on request:\n" + message;
+//
+//        return ChatClient.create(chatModel)
+//                .prompt()
+//                .user(u -> u.text(promptText))
+//                .call()
+//                .entity(RouteBrouteAiModel.Request.class);
+//    }
     public LanguageAiJson.Response giveMeLanguage(String message) {
         final String promptText = "Provide language of that message:\n" + message;
 

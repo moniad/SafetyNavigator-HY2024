@@ -20,7 +20,7 @@ public class BRouterService {
     private RestTemplate restTemplate;
 
     public GeoJson getData() {
-        String BROUTER_URL = "https://smartbike.website/brouter?lonlats=19.94098,50.06465|19.94428,50.04990&profile=trekking&alternativeidx=0&format=geojson"; // Zastąp rzeczywistym URL
+        String BROUTER_URL = "http://localhost:17777/brouter?lonlats=19.94098,50.06465|19.94428,50.04990&profile=trekking&alternativeidx=0&format=geojson"; // Zastąp rzeczywistym URL
 
         try {
             // Wykonanie żądania GET
@@ -58,6 +58,7 @@ public class BRouterService {
 
             // Send the request and get the response
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
 
             // Print the response
             System.out.println("Request: " + requestBody);
