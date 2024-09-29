@@ -20,6 +20,7 @@ public class Properties {
     @JsonProperty("total-energy")
     private String totalEnergy;
     private String cost;
+    private String safety;
     private List<List<String>> messages;
     private List<Double> times;
 

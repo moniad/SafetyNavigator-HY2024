@@ -3,11 +3,10 @@ package org.example.bikesmart.ai.logic;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.bikesmart.ai.model.BrouterTypeClass;
-import org.example.bikesmart.ai.model.LanguageAiJson;
-import org.example.bikesmart.ai.model.RequirementsAiModel;
-import org.example.bikesmart.ai.model.RouteBrouteAiModel;
+import org.example.bikesmart.ai.model.*;
+import org.example.bikesmart.geojsonParsers.Feature;
 import org.example.bikesmart.geojsonParsers.GeoJson;
+import org.example.bikesmart.geojsonParsers.Properties;
 import org.example.bikesmart.maps.logic.RoutingService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -24,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -80,6 +80,42 @@ public class AiService {
                     BrouterTypeClass.SAFE.getName(),
                     1
             );
+            // Process the messages to extract WayTags and generate safety scores
+            List<Feature> updatedFeatures = geoJson.getFeatures()
+                    .stream()
+                    .map(feature -> {
+                        Properties properties = feature.getProperties();
+                        List<List<String>> messages = properties.getMessages();
+
+                        // Skip the header row
+                        List<List<String>> dataRows = messages.subList(1, messages.size());
+
+                        // Extract WayTags from each row
+                        List<String> wayTagsList = dataRows.stream()
+                                .map(row -> row.get(9)) // Assuming WayTags is at index 9
+                                .collect(Collectors.toList());
+
+                        // Generate safety scores for each WayTag
+                        List<Score> safetyScores = wayTagsList.stream()
+                                .map(wayTags -> generateSafetyScore(wayTags))
+                                .collect(Collectors.toList());
+
+                        // You can aggregate the safety scores or assign them back to properties
+                        // For simplicity, let's assume we take the lowest safety score as the overall score
+                        Score overallScore = safetyScores.stream().min(Comparator.naturalOrder()).orElse(Score.MEDIUM);
+
+                        // Set the safety score in properties
+                        properties.setSafety(overallScore.getName());
+
+                        // Update the feature with the new properties
+                        feature.setProperties(properties);
+                        return feature;
+                    })
+                    .collect(Collectors.toList());
+
+            // Update the geoJson with the updated features
+            geoJson.setFeatures(updatedFeatures);
+
             return new RouteBrouteAiModel.Response(geoJson, LocalDateTime.now());
         } catch (IOException e) {
             e.printStackTrace();
@@ -87,6 +123,46 @@ public class AiService {
             return null;
         }
     }
+
+    private Score generateSafetyScore(String wayTags) {
+        // Prepare the prompt for the AI model
+        String prompt = "Evaluate the following way tags and assign a safety score (Very Low, Low, Medium, High, Very High). Provide only the score:\n" + wayTags;
+
+        // Call the AI model using Spring AI and get the response as a String
+        return ChatClient.create(chatModel)
+                .prompt()
+                .user(u -> u.text(prompt))
+                .call()
+                .entity(SafetyScore.Response.class).score(); // Get the AI response as a String
+
+//        // Log the AI response for debugging
+//        log.info("AI response: {}", aiResponse);
+//
+//        // Map the AI response to the Score enum
+//        return mapAiResponseToScore(aiResponse);
+    }
+
+    private Score mapAiResponseToScore(String aiResponse) {
+        String cleanedResponse = aiResponse.trim().toLowerCase();
+
+        // Optionally, extract the score if the AI returns additional text
+        if (cleanedResponse.contains("very low")) {
+            return Score.VERY_LOW;
+        } else if (cleanedResponse.contains("low")) {
+            return Score.LOW;
+        } else if (cleanedResponse.contains("medium")) {
+            return Score.MEDIUM;
+        } else if (cleanedResponse.contains("high")) {
+            return Score.HIGH;
+        } else if (cleanedResponse.contains("very high")) {
+            return Score.VERY_HIGH;
+        } else {
+            // Default score if unrecognized
+            log.warn("Unrecognized safety score from AI: {}", aiResponse);
+            return Score.MEDIUM;
+        }
+    }
+
 
 
 
